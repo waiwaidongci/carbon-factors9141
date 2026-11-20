@@ -29,6 +29,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-carbon-factors-local-demo-change-before-production-2026}
       SEED_DEMO: "true"
+      # 本站标识：跨站合并时用于区分报告/交付原号空间；两个站部署时各取不同值。
+      STATION_NAME: ${STATION_NAME:-carbon-factors}
     ports: ["${BACKEND_PORT:-19254}:8000"]
     volumes: ["report-files:/app/artifacts"]
     depends_on:

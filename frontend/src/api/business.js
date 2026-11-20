@@ -4,3 +4,5 @@ export const saveSource=(data,id)=>request('/sources'+(id?'/'+id:''),id?'PUT':'P
 export const savePolicy=data=>request('/policies','POST',{data});
 export const submitRun=data=>request('/runs','POST',data);
 export const approveRun=(id,note)=>request('/runs/'+id+'/approve','POST',{note});
+export const loadLedgerOrigins=()=>request('/ledger/origins');
+export const loadLedgerImports=()=>request('/ledger/imports');

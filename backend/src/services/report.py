@@ -1,9 +1,11 @@
-import hashlib,json,time
+import time
 from fastapi import HTTPException
+from src.config.settings import REDIS_URL,STATION_NAME
 from src.models.source import Source,Policy
 from src.models.run import Run
+from src.utils.origins import local_origin_id
+from src.utils.checksum import snapshot_checksum
 from src.services.audit import log
-from src.config.settings import REDIS_URL
 import redis
 def submit(db,user,body):
  policy=db.get(Policy,body.policy_id)
@@ -11,9 +13,10 @@ def submit(db,user,body):
  sources=[x.data for x in db.query(Source).order_by(Source.id).all() if body.period=='全部' or x.data.get('period')==body.period]
  if not sources: raise HTTPException(422,'所选期间没有底稿')
  snapshot={'policy':policy.data,'sources':sources,'period':body.period}
- checksum=hashlib.sha256(json.dumps(snapshot,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
- obj=Run(name=body.name,status='queued',snapshot=snapshot,checksum=checksum,created=time.time(),approved=False)
- db.add(obj);log(db,user.email,'run.queue',body.name);db.commit()
+ checksum=snapshot_checksum(snapshot)
+ obj=Run(name=body.name,status='queued',snapshot=snapshot,checksum=checksum,created=time.time(),approved=False,station=STATION_NAME,imported=False,visible=True)
+ db.add(obj);db.flush();obj.origin_id=local_origin_id(db,Run,STATION_NAME,obj.id)
+ log(db,user.email,'run.queue',body.name);db.commit()
  redis.Redis.from_url(REDIS_URL).rpush('report-jobs',obj.id)
  return obj
 def approve(db,user,id,note):
